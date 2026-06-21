@@ -1,22 +1,35 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Zenith Alpha Capital API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: users
+    description: User management
+  - name: investments
+    description: Investment plans and portfolios
+  - name: transactions
+    description: Transaction history
+  - name: referrals
+    description: Referral system
+  - name: blog
+    description: Blog posts
+  - name: admin
+    description: Admin operations
+  - name: crypto
+    description: Live crypto prices
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +37,980 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ── Users ──────────────────────────────────────────────────────────────────
+  /users/me:
+    get:
+      operationId: getMe
+      tags: [users]
+      summary: Get current user profile
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized
+    patch:
+      operationId: updateMe
+      tags: [users]
+      summary: Update current user profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /users/me/kyc:
+    post:
+      operationId: submitKyc
+      tags: [users]
+      summary: Submit KYC verification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/KycInput"
+      responses:
+        "200":
+          description: KYC submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  # ── Investment Plans ────────────────────────────────────────────────────────
+  /investment-plans:
+    get:
+      operationId: listInvestmentPlans
+      tags: [investments]
+      summary: List all investment plans
+      responses:
+        "200":
+          description: List of plans
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InvestmentPlan"
+
+  /investment-plans/{id}:
+    get:
+      operationId: getInvestmentPlan
+      tags: [investments]
+      summary: Get investment plan
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Plan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvestmentPlan"
+
+  # ── Portfolios (active investments) ────────────────────────────────────────
+  /portfolios:
+    get:
+      operationId: listPortfolios
+      tags: [investments]
+      summary: List user's active investments
+      responses:
+        "200":
+          description: List of portfolios
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Portfolio"
+    post:
+      operationId: createPortfolio
+      tags: [investments]
+      summary: Invest in a plan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PortfolioInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Portfolio"
+
+  /portfolios/{id}:
+    get:
+      operationId: getPortfolio
+      tags: [investments]
+      summary: Get portfolio details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Portfolio
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Portfolio"
+
+  # ── Transactions ────────────────────────────────────────────────────────────
+  /transactions:
+    get:
+      operationId: listTransactions
+      tags: [transactions]
+      summary: List user transactions
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [deposit, withdrawal, profit, bonus, referral]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, approved, rejected, completed]
+      responses:
+        "200":
+          description: List of transactions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Transaction"
+    post:
+      operationId: createTransaction
+      tags: [transactions]
+      summary: Request deposit or withdrawal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransactionInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+
+  /transactions/{id}:
+    get:
+      operationId: getTransaction
+      tags: [transactions]
+      summary: Get transaction details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Transaction
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+
+  # ── Referrals ───────────────────────────────────────────────────────────────
+  /referrals:
+    get:
+      operationId: listReferrals
+      tags: [referrals]
+      summary: List referrals made by current user
+      responses:
+        "200":
+          description: List of referrals
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Referral"
+
+  /referrals/stats:
+    get:
+      operationId: getReferralStats
+      tags: [referrals]
+      summary: Get referral statistics
+      responses:
+        "200":
+          description: Referral stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReferralStats"
+
+  # ── Dashboard Summary ───────────────────────────────────────────────────────
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [investments]
+      summary: Get user dashboard summary
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  # ── Blog ────────────────────────────────────────────────────────────────────
+  /blog:
+    get:
+      operationId: listBlogPosts
+      tags: [blog]
+      summary: List published blog posts
+      responses:
+        "200":
+          description: List of posts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BlogPost"
+    post:
+      operationId: createBlogPost
+      tags: [blog]
+      summary: Create a blog post (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BlogPostInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BlogPost"
+
+  /blog/{id}:
+    get:
+      operationId: getBlogPost
+      tags: [blog]
+      summary: Get a blog post
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Blog post
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BlogPost"
+    patch:
+      operationId: updateBlogPost
+      tags: [blog]
+      summary: Update a blog post (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BlogPostUpdate"
+      responses:
+        "200":
+          description: Updated post
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BlogPost"
+    delete:
+      operationId: deleteBlogPost
+      tags: [blog]
+      summary: Delete a blog post (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Admin ───────────────────────────────────────────────────────────────────
+  /admin/stats:
+    get:
+      operationId: getAdminStats
+      tags: [admin]
+      summary: Get platform-wide statistics
+      responses:
+        "200":
+          description: Admin stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStats"
+
+  /admin/users:
+    get:
+      operationId: listAllUsers
+      tags: [admin]
+      summary: List all users
+      responses:
+        "200":
+          description: All users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+
+  /admin/users/{id}:
+    get:
+      operationId: getAdminUser
+      tags: [admin]
+      summary: Get a user (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+    patch:
+      operationId: updateAdminUser
+      tags: [admin]
+      summary: Update user status/role (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminUserUpdate"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /admin/transactions:
+    get:
+      operationId: listAllTransactions
+      tags: [admin]
+      summary: List all transactions (admin)
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, approved, rejected, completed]
+      responses:
+        "200":
+          description: All transactions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Transaction"
+
+  /admin/transactions/{id}/approve:
+    post:
+      operationId: approveTransaction
+      tags: [admin]
+      summary: Approve a transaction
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Approved transaction
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+
+  /admin/transactions/{id}/reject:
+    post:
+      operationId: rejectTransaction
+      tags: [admin]
+      summary: Reject a transaction
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RejectInput"
+      responses:
+        "200":
+          description: Rejected transaction
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+
+  /admin/investment-plans:
+    post:
+      operationId: createInvestmentPlan
+      tags: [admin]
+      summary: Create an investment plan (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvestmentPlanInput"
+      responses:
+        "201":
+          description: Created plan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvestmentPlan"
+
+  /admin/investment-plans/{id}:
+    patch:
+      operationId: updateInvestmentPlan
+      tags: [admin]
+      summary: Update an investment plan (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvestmentPlanUpdate"
+      responses:
+        "200":
+          description: Updated plan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InvestmentPlan"
+    delete:
+      operationId: deleteInvestmentPlan
+      tags: [admin]
+      summary: Delete an investment plan (admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Crypto Prices ───────────────────────────────────────────────────────────
+  /crypto/prices:
+    get:
+      operationId: getCryptoPrices
+      tags: [crypto]
+      summary: Get live crypto prices (proxied from CoinGecko)
+      responses:
+        "200":
+          description: Live crypto prices
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CryptoPrice"
+
 components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
         status:
           type: string
-      required:
-        - status
 
+    User:
+      type: object
+      required: [id, clerkId, email, role, status, balance, totalInvested, totalProfit, referralCode, createdAt]
+      properties:
+        id:
+          type: integer
+        clerkId:
+          type: string
+        email:
+          type: string
+        firstName:
+          type: ["string", "null"]
+        lastName:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        country:
+          type: ["string", "null"]
+        role:
+          type: string
+          enum: [user, admin]
+        status:
+          type: string
+          enum: [active, suspended, pending]
+        balance:
+          type: number
+        totalInvested:
+          type: number
+        totalProfit:
+          type: number
+        referralCode:
+          type: string
+        referredBy:
+          type: ["string", "null"]
+        kycStatus:
+          type: string
+          enum: [none, pending, approved, rejected]
+        createdAt:
+          type: string
+
+    UserUpdate:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phone:
+          type: string
+        country:
+          type: string
+
+    KycInput:
+      type: object
+      required: [fullName, dateOfBirth, documentType, documentNumber]
+      properties:
+        fullName:
+          type: string
+        dateOfBirth:
+          type: string
+        documentType:
+          type: string
+          enum: [passport, drivers_license, national_id]
+        documentNumber:
+          type: string
+        address:
+          type: string
+
+    AdminUserUpdate:
+      type: object
+      properties:
+        role:
+          type: string
+          enum: [user, admin]
+        status:
+          type: string
+          enum: [active, suspended, pending]
+        balance:
+          type: number
+
+    InvestmentPlan:
+      type: object
+      required: [id, name, description, minAmount, maxAmount, returnRate, durationDays, riskLevel, isActive, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        minAmount:
+          type: number
+        maxAmount:
+          type: ["number", "null"]
+        returnRate:
+          type: number
+        durationDays:
+          type: integer
+        riskLevel:
+          type: string
+          enum: [low, medium, high]
+        features:
+          type: array
+          items:
+            type: string
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+
+    InvestmentPlanInput:
+      type: object
+      required: [name, description, minAmount, returnRate, durationDays, riskLevel]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        minAmount:
+          type: number
+        maxAmount:
+          type: ["number", "null"]
+        returnRate:
+          type: number
+        durationDays:
+          type: integer
+        riskLevel:
+          type: string
+          enum: [low, medium, high]
+        features:
+          type: array
+          items:
+            type: string
+        isActive:
+          type: boolean
+
+    InvestmentPlanUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        minAmount:
+          type: number
+        maxAmount:
+          type: ["number", "null"]
+        returnRate:
+          type: number
+        durationDays:
+          type: integer
+        riskLevel:
+          type: string
+          enum: [low, medium, high]
+        features:
+          type: array
+          items:
+            type: string
+        isActive:
+          type: boolean
+
+    Portfolio:
+      type: object
+      required: [id, userId, planId, planName, amount, currentValue, profit, startDate, endDate, status, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        planId:
+          type: integer
+        planName:
+          type: string
+        amount:
+          type: number
+        currentValue:
+          type: number
+        profit:
+          type: number
+        returnRate:
+          type: number
+        startDate:
+          type: string
+        endDate:
+          type: string
+        status:
+          type: string
+          enum: [active, completed, cancelled]
+        createdAt:
+          type: string
+
+    PortfolioInput:
+      type: object
+      required: [planId, amount]
+      properties:
+        planId:
+          type: integer
+        amount:
+          type: number
+
+    Transaction:
+      type: object
+      required: [id, userId, type, amount, status, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        type:
+          type: string
+          enum: [deposit, withdrawal, profit, bonus, referral]
+        amount:
+          type: number
+        status:
+          type: string
+          enum: [pending, approved, rejected, completed]
+        description:
+          type: ["string", "null"]
+        paymentMethod:
+          type: ["string", "null"]
+        walletAddress:
+          type: ["string", "null"]
+        rejectReason:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    TransactionInput:
+      type: object
+      required: [type, amount]
+      properties:
+        type:
+          type: string
+          enum: [deposit, withdrawal]
+        amount:
+          type: number
+        paymentMethod:
+          type: string
+        walletAddress:
+          type: string
+        description:
+          type: string
+
+    RejectInput:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+
+    Referral:
+      type: object
+      required: [id, referrerId, referredId, referredEmail, bonus, status, createdAt]
+      properties:
+        id:
+          type: integer
+        referrerId:
+          type: integer
+        referredId:
+          type: integer
+        referredEmail:
+          type: string
+        bonus:
+          type: number
+        status:
+          type: string
+          enum: [pending, paid]
+        createdAt:
+          type: string
+
+    ReferralStats:
+      type: object
+      required: [totalReferrals, totalBonus, pendingBonus, referralCode, referralLink]
+      properties:
+        totalReferrals:
+          type: integer
+        totalBonus:
+          type: number
+        pendingBonus:
+          type: number
+        referralCode:
+          type: string
+        referralLink:
+          type: string
+
+    DashboardSummary:
+      type: object
+      required: [totalBalance, totalInvested, totalProfit, activeInvestments, pendingTransactions, referralBonus]
+      properties:
+        totalBalance:
+          type: number
+        totalInvested:
+          type: number
+        totalProfit:
+          type: number
+        activeInvestments:
+          type: integer
+        pendingTransactions:
+          type: integer
+        referralBonus:
+          type: number
+        recentTransactions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Transaction"
+
+    BlogPost:
+      type: object
+      required: [id, title, slug, excerpt, content, authorName, published, createdAt]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        slug:
+          type: string
+        excerpt:
+          type: string
+        content:
+          type: string
+        coverImage:
+          type: ["string", "null"]
+        authorName:
+          type: string
+        category:
+          type: ["string", "null"]
+        tags:
+          type: array
+          items:
+            type: string
+        published:
+          type: boolean
+        createdAt:
+          type: string
+
+    BlogPostInput:
+      type: object
+      required: [title, slug, excerpt, content, authorName]
+      properties:
+        title:
+          type: string
+        slug:
+          type: string
+        excerpt:
+          type: string
+        content:
+          type: string
+        coverImage:
+          type: string
+        authorName:
+          type: string
+        category:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        published:
+          type: boolean
+
+    BlogPostUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        slug:
+          type: string
+        excerpt:
+          type: string
+        content:
+          type: string
+        coverImage:
+          type: string
+        authorName:
+          type: string
+        category:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        published:
+          type: boolean
+
+    AdminStats:
+      type: object
+      required: [totalUsers, activeUsers, totalDeposits, totalWithdrawals, totalProfit, pendingTransactions, totalInvestments]
+      properties:
+        totalUsers:
+          type: integer
+        activeUsers:
+          type: integer
+        totalDeposits:
+          type: number
+        totalWithdrawals:
+          type: number
+        totalProfit:
+          type: number
+        pendingTransactions:
+          type: integer
+        totalInvestments:
+          type: integer
+        recentSignups:
+          type: integer
+
+    CryptoPrice:
+      type: object
+      required: [id, name, symbol, currentPrice, priceChangePercent24h, marketCap, image]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        symbol:
+          type: string
+        currentPrice:
+          type: number
+        priceChangePercent24h:
+          type: number
+        marketCap:
+          type: number
+        volume24h:
+          type: number
+        image:
+          type: string

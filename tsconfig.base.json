@@ -15,7 +15,7 @@
     "strictNullChecks": false,
     "strictFunctionTypes": false,
     "strictBindCallApply": true,
-    "strictPropertyInitialization": true,
+    "strictPropertyInitialization": false,
     "useUnknownInCatchVariables": true,
     "alwaysStrict": false,
     "skipLibCheck": true,

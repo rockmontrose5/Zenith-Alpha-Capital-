@@ -48,6 +48,11 @@ app.use(
   })),
 );
 
+// 👇 This is the only thing that was added
+app.get("/", (req, res) => {
+  res.status(200).send("Zenith Alpha Capital Backend is running.");
+});
+
 app.use("/api", router);
 
 export default app;

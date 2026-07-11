@@ -8,10 +8,15 @@ const router = Router();
 
 router.get("/me", requireAuth, async (req, res) => {
   try {
-    const { userId } = getAuth(req);
-    const clerkUser = req.auth?.sessionClaims;
-    const email = (clerkUser?.email as string) ?? "";
+    const auth = getAuth(req);
+    const userId = auth.userId;
+    const email =
+      (auth.sessionClaims?.email as string) ||
+      (auth.sessionClaims?.email_address as string) ||
+      "";
+
     const user = await getOrCreateUser(userId!, email);
+
     res.json(formatUser(user));
   } catch (err) {
     req.log.error(err, "Failed to get user");
@@ -23,11 +28,13 @@ router.patch("/me", requireAuth, async (req, res) => {
   try {
     const { userId } = getAuth(req);
     const { firstName, lastName, phone, country } = req.body;
+
     const [updated] = await db
       .update(usersTable)
       .set({ firstName, lastName, phone, country })
       .where(eq(usersTable.clerkId, userId!))
       .returning();
+
     res.json(formatUser(updated));
   } catch (err) {
     req.log.error(err, "Failed to update user");
@@ -38,11 +45,13 @@ router.patch("/me", requireAuth, async (req, res) => {
 router.post("/me/kyc", requireAuth, async (req, res) => {
   try {
     const { userId } = getAuth(req);
+
     const [updated] = await db
       .update(usersTable)
       .set({ kycStatus: "pending" })
       .where(eq(usersTable.clerkId, userId!))
       .returning();
+
     res.json(formatUser(updated));
   } catch (err) {
     req.log.error(err, "Failed to submit KYC");

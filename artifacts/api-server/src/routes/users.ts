@@ -9,13 +9,20 @@ const router = Router();
 router.get("/me", requireAuth, async (req, res) => {
   try {
     const auth = getAuth(req);
-    const userId = auth.userId;
+
+    if (!auth.userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const sessionClaims = auth.sessionClaims as Record<string, any> | undefined;
+
     const email =
-      (auth.sessionClaims?.email as string) ||
-      (auth.sessionClaims?.email_address as string) ||
+      sessionClaims?.email ??
+      sessionClaims?.email_address ??
+      sessionClaims?.["https://clerk.dev/email"] ??
       "";
 
-    const user = await getOrCreateUser(userId!, email);
+    const user = await getOrCreateUser(auth.userId, email);
 
     res.json(formatUser(user));
   } catch (err) {
@@ -26,13 +33,23 @@ router.get("/me", requireAuth, async (req, res) => {
 
 router.patch("/me", requireAuth, async (req, res) => {
   try {
-    const { userId } = getAuth(req);
+    const auth = getAuth(req);
+
+    if (!auth.userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
     const { firstName, lastName, phone, country } = req.body;
 
     const [updated] = await db
       .update(usersTable)
-      .set({ firstName, lastName, phone, country })
-      .where(eq(usersTable.clerkId, userId!))
+      .set({
+        firstName,
+        lastName,
+        phone,
+        country,
+      })
+      .where(eq(usersTable.clerkId, auth.userId))
       .returning();
 
     res.json(formatUser(updated));
@@ -44,12 +61,18 @@ router.patch("/me", requireAuth, async (req, res) => {
 
 router.post("/me/kyc", requireAuth, async (req, res) => {
   try {
-    const { userId } = getAuth(req);
+    const auth = getAuth(req);
+
+    if (!auth.userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
 
     const [updated] = await db
       .update(usersTable)
-      .set({ kycStatus: "pending" })
-      .where(eq(usersTable.clerkId, userId!))
+      .set({
+        kycStatus: "pending",
+      })
+      .where(eq(usersTable.clerkId, auth.userId))
       .returning();
 
     res.json(formatUser(updated));

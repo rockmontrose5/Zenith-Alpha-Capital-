@@ -122,7 +122,13 @@ router.get("/transactions", requireAdmin, async (req, res) => {
   try {
     const txs = await db.select().from(transactionsTable);
     let filtered = txs;
-    if (req.query.status) filtered = filtered.filter(t => t.status === req.query.status);
+    const status = Array.isArray(req.query.status)
+  ? req.query.status[0]
+  : req.query.status;
+
+if (status) {
+  filtered = filtered.filter(t => t.status === status);
+}
     res.json(filtered.map(formatTx));
   } catch (err) {
     res.status(500).json({ error: "Internal server error" });

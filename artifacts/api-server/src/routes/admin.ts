@@ -82,7 +82,11 @@ router.get("/users", requireAdmin, async (_req, res) => {
 // Get single user
 router.get("/users/:id", requireAdmin, async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const rawId = Array.isArray(req.params.id)
+  ? req.params.id[0]
+  : req.params.id;
+
+const id = parseInt(rawId, 10);
     const [user] = await db.select().from(usersTable).where(eq(usersTable.id, id)).limit(1);
     if (!user) { res.status(404).json({ error: "Not found" }); return; }
     res.json(formatUser(user));
@@ -94,7 +98,11 @@ router.get("/users/:id", requireAdmin, async (req, res) => {
 // Update user (role/status/balance)
 router.patch("/users/:id", requireAdmin, async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const rawId = Array.isArray(req.params.id)
+  ? req.params.id[0]
+  : req.params.id;
+
+const id = parseInt(rawId, 10);
     const { role, status, balance } = req.body;
     const updates: Record<string, unknown> = {};
     if (role !== undefined) updates.role = role;
@@ -124,7 +132,11 @@ router.get("/transactions", requireAdmin, async (req, res) => {
 // Approve transaction
 router.post("/transactions/:id/approve", requireAdmin, async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const rawId = Array.isArray(req.params.id)
+  ? req.params.id[0]
+  : req.params.id;
+
+const id = parseInt(rawId, 10);
     const [tx] = await db.select().from(transactionsTable).where(eq(transactionsTable.id, id)).limit(1);
     if (!tx) { res.status(404).json({ error: "Not found" }); return; }
 
@@ -150,7 +162,11 @@ router.post("/transactions/:id/approve", requireAdmin, async (req, res) => {
 // Reject transaction
 router.post("/transactions/:id/reject", requireAdmin, async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const rawId = Array.isArray(req.params.id)
+  ? req.params.id[0]
+  : req.params.id;
+
+const id = parseInt(rawId, 10);
     const { reason } = req.body;
     const [updated] = await db.update(transactionsTable)
       .set({ status: "rejected", rejectReason: reason })
@@ -186,7 +202,11 @@ router.post("/investment-plans", requireAdmin, async (req, res) => {
 // Update investment plan
 router.patch("/investment-plans/:id", requireAdmin, async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const rawId = Array.isArray(req.params.id)
+  ? req.params.id[0]
+  : req.params.id;
+
+const id = parseInt(rawId, 10);
     const { name, description, minAmount, maxAmount, returnRate, durationDays, riskLevel, features, isActive } = req.body;
     const updates: Record<string, unknown> = {};
     if (name !== undefined) updates.name = name;
@@ -210,7 +230,11 @@ router.patch("/investment-plans/:id", requireAdmin, async (req, res) => {
 // Delete investment plan
 router.delete("/investment-plans/:id", requireAdmin, async (req, res) => {
   try {
-    const id = parseInt(req.params.id);
+    const rawId = Array.isArray(req.params.id)
+  ? req.params.id[0]
+  : req.params.id;
+
+const id = parseInt(rawId, 10);
     await db.delete(investmentPlansTable).where(eq(investmentPlansTable.id, id));
     res.status(204).send();
   } catch (err) {

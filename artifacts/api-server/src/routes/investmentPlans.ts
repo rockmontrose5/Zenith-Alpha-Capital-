@@ -22,21 +22,46 @@ function formatPlan(p: typeof investmentPlansTable.$inferSelect) {
 
 router.get("/", async (_req, res) => {
   try {
-    const plans = await db.select().from(investmentPlansTable).where(eq(investmentPlansTable.isActive, true));
+    const plans = await db
+      .select()
+      .from(investmentPlansTable)
+      .where(eq(investmentPlansTable.isActive, true));
+
     res.json(plans.map(formatPlan));
   } catch (err) {
-    res.status(500).json({ error: "Internal server error" });
+    console.error("Investment Plans Error:", err);
+
+    res.status(500).json({
+      error: "Internal server error",
+      details: err instanceof Error ? err.message : String(err),
+    });
   }
 });
 
 router.get("/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const [plan] = await db.select().from(investmentPlansTable).where(eq(investmentPlansTable.id, id)).limit(1);
-    if (!plan) { res.status(404).json({ error: "Not found" }); return; }
+
+    const [plan] = await db
+      .select()
+      .from(investmentPlansTable)
+      .where(eq(investmentPlansTable.id, id))
+      .limit(1);
+
+    if (!plan) {
+      return res.status(404).json({
+        error: "Not found",
+      });
+    }
+
     res.json(formatPlan(plan));
   } catch (err) {
-    res.status(500).json({ error: "Internal server error" });
+    console.error("Investment Plan Error:", err);
+
+    res.status(500).json({
+      error: "Internal server error",
+      details: err instanceof Error ? err.message : String(err),
+    });
   }
 });
 
